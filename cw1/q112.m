@@ -1,3 +1,6 @@
+% 清空工作空间和命令行
+clear; clc;
+
 load('data');
 dwis = double(dwis);
 dwis = permute(dwis, [4,1,2,3]); % 调整维度为[108,145,174,145]
@@ -31,28 +34,29 @@ d = parameter_hat(2);
 f_val = parameter_hat(3);
 theta = parameter_hat(4);
 phi = parameter_hat(5);
+plot_fit(phi, theta, S0, f_val, d, bvals, qhat, Avox, RESNORM);
 
-% 计算纤维方向
-fibdir = [cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta)];
-fibdotgrad = sum(qhat .* repmat(fibdir, [size(qhat,1), 1]), 2);
-S_model = S0 * ( f_val * exp(-bvals*d .* (fibdotgrad.^2)) + (1-f_val) * exp(-bvals * d));
-
-% 这里令 k 为测量编号（1 到 108）
-k = (1:length(bvals))';
-
-% 绘图
-figure;
-hold on;
-% 绘制实际测量数据：蓝色点
-plot(k, Avox, 'bo', 'MarkerFaceColor','b', 'DisplayName','Data');
-% 绘制模型预测数据：红色点
-plot(k, S_model, 'ro', 'MarkerFaceColor','r', 'DisplayName','Model');
-xlabel('k (Measurement Index)'); ylabel('S (Signal Intensity)');
-title(sprintf('Ball-and-Stick Model Fit SSD = %.4e', RESNORM));
-legend('Location','best');
-
-% 为图形侧边添加 SSD 值
-dim = [0.75 0.6 0.2 0.2]; % 文字框在图内的位置（归一化单位）
-str = sprintf('SSD = %.4e', RESNORM);
-annotation('textbox', dim, 'String', str, 'FitBoxToText','on', 'BackgroundColor','w');
-hold off;
+% % 计算纤维方向
+% fibdir = [cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta)];
+% fibdotgrad = sum(qhat .* repmat(fibdir, [size(qhat,1), 1]), 2);
+% S_model = S0 * ( f_val * exp(-bvals*d .* (fibdotgrad.^2)) + (1-f_val) * exp(-bvals * d));
+% 
+% % 这里令 k 为测量编号（1 到 108）
+% k = (1:length(bvals))';
+% 
+% % 绘图
+% figure;
+% hold on;
+% % 绘制实际测量数据：蓝色点
+% plot(k, Avox, 'bo', 'MarkerFaceColor','b', 'DisplayName','Data');
+% % 绘制模型预测数据：红色点
+% plot(k, S_model, 'ro', 'MarkerFaceColor','r', 'DisplayName','Model');
+% xlabel('k (Measurement Index)'); ylabel('S (Signal Intensity)');
+% title(sprintf('Ball-and-Stick Model Fit SSD = %.4e', RESNORM));
+% legend('Location','best');
+% 
+% % 为图形侧边添加 SSD 值
+% dim = [0.75 0.6 0.2 0.2]; % 文字框在图内的位置（归一化单位）
+% str = sprintf('SSD = %.4e', RESNORM);
+% annotation('textbox', dim, 'String', str, 'FitBoxToText','on', 'BackgroundColor','w');
+% hold off;
