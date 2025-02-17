@@ -1,0 +1,73 @@
+load('data');
+dwis = double(dwis);
+dwis = permute(dwis, [4,1,2,3]); % 调整维度为[108,145,174,145]
+load('bvecs');
+qhat = bvecs';
+bvals = 1000 * sum(qhat .* qhat, 2);
+
+h=optimset('MaxFunEvals',20000,...
+ 'Algorithm','quasi-newton',...
+ 'TolX',1e-10,...
+ 'TolFun',1e-10);
+[parameter_hat, RESNORM, EXITFLAG, OUTPUT] = fminunc(@(x) BallStickSSD(x, Avox, bvals, qhat), startx, h);
+
+%% 修改后的单个体素拟合与可视化
+Avox = dwis(:,92,65,72);
+k = 1:length(Avox); % 生成测量点索引
+
+% 定义优化参数（带约束）
+lb = [0, 0, 0, 0, 0];
+ub = [5000, 1e-2, 1, pi, 2*pi];
+startx = [3.5e+00, 3e-03, 2.5e-01, 0, 0];
+
+% 运行优化
+[parameter_hat, RESNORM] = fmincon(@(x) BallStickSSD(x, Avox, bvals, qhat),...
+                                  startx, [], [], [], [], lb, ub, [], h);
+
+% 生成模型预测
+S0 = parameter_hat(1);
+diff = parameter_hat(2);
+f = parameter_hat(3);
+theta = parameter_hat(4);
+phi = parameter_hat(5);
+
+fibdir = [cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta)];
+fibdotgrad = sum(qhat .* fibdir, 2);
+S = S0*(f*exp(-bvals*diff.*(fibdotgrad.^2)) + (1-f)*exp(-bvals*diff));
+
+%% 新版可视化图形
+figure('Position', [100 100 800 400])
+hold on
+
+% 绘制数据点
+scatter(k, Avox, 40, 'b', 'filled', 'DisplayName', 'Data')
+% 绘制模型预测
+scatter(k, S, 40, 'r', 'filled', 'DisplayName', 'Model')
+
+% 图形修饰
+xlabel('Measurement Index (k)','FontSize',12)
+ylabel('Signal Intensity (S)','FontSize',12)
+title({'Ball-and-Stick Model Fit';...
+      ['SSD = ', num2str(RESNORM,'%.2e')]},'FontSize',14)
+legend('Location','northeast')
+
+% 添加SSD文本标注
+text(0.05, 0.95, ['SSD = ', num2str(RESNORM,'%.2e')],...
+    'Units','normalized','FontSize',12,...
+    'VerticalAlignment','top','HorizontalAlignment','left')
+
+set(gca,'FontSize',11,'LineWidth',1.2)
+grid on
+box on
+xlim([0 length(k)+1])
+
+%% 参数合理性检查
+param_table = table(parameter_hat(1), parameter_hat(2), parameter_hat(3),...
+    rad2deg(theta), rad2deg(phi),...
+    'VariableNames',{'S0','d','f','theta(deg)','phi(deg)'});
+disp(param_table)
+
+% 验证物理合理性
+assert(parameter_hat(2) > 0, 'Diffusivity must be positive')
+assert(parameter_hat(3) >= 0 && parameter_hat(3) <= 1,...
+    'f must be in [0,1]')
