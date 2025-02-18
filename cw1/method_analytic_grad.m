@@ -10,19 +10,12 @@ function [results, total_time] = method_analytic_grad(dwis, bvals, qhat, slice_n
     %             'TolFun',1e-8, 'TolX',1e-8,...
     %             'Display','off');
     
-    h = optimoptions('fmincon', ...
-                     'Algorithm', 'sqp', ...  % 更稳健的算法
-                     'SpecifyObjectiveGradient', true, ...
-                     'Display', 'off', ...
-                     'MaxFunctionEvaluations', 20000, ...
-                     'MaxIterations', 1000, ...
-                     'OptimalityTolerance', 1e-6, ...
-                     'StepTolerance', 1e-6);
-                         % 'CheckGradients',true, ...
+    h = optimoptions('fmincon', 'Algorithm', 'quasi-newton', ...
+                     'SpecifyObjectiveGradient', true, 'Display', 'off', ...
+                     'MaxFunctionEvaluations', 1e4, 'Tolfun', 1e-10, 'TolX', 1e-10);
 
     lb = [0 0 0 0 0];       % S0, d, f, theta, phi下限
-    % ub = [1e5 3e-3 1 pi 2*pi]; % 上限
-    ub = [Inf, Inf, 1, pi, 2*pi];
+    ub = [1e5 3e-3 1 pi 2*pi]; % 上限
     
     % 预分配结果矩阵
     S0 = zeros(x_dim, y_dim);
@@ -37,15 +30,14 @@ function [results, total_time] = method_analytic_grad(dwis, bvals, qhat, slice_n
             Avox = squeeze(dwis(:,x,y,slice_num));
             if all(Avox>0)
                 % startx = [mean(Avox(bvals==0)), 2e-3, 0.3, pi/4, pi/4]; % 通用初始值
-                startx = [S0_init(x,y), d_init(x,y),...
-                         f_init(x,y), theta_init(x,y), phi_init(x,y)];
+                startx = [sqrt(S0_init(x,y)), sqrt(d_init(x,y)),...
+                         -log(1/f_init(x,y)-1), theta_init(x,y), phi_init(x,y)];
                 try
                     % 设置超时限制（100秒/体素）
-                    % opt = h; 
-                    % opt.TimeLimit = 100;
-                    [params, resnorm] = fmincon(@(x)BallStickSSD_grad(x, Avox, bvals, qhat), ...
-                                                startx, [], [], [], [], lb, ub, [], h);
-                    
+                    opt = h; 
+                    opt.TimeLimit = 100;
+                    [params, resnorm] = fmincon(@(x)BallStickSSD(x,Avox,bvals,qhat),...
+                                              startx, [],[],[],[],lb,ub,[],h);
                     % [S0(x,y), d(x,y), f(x,y), theta(x,y), phi(x,y)] = parse_params(params);
                     S0(x,y) = params(1);
                     d(x,y) = params(2);
@@ -56,15 +48,8 @@ function [results, total_time] = method_analytic_grad(dwis, bvals, qhat, slice_n
                 catch ME
                     fprintf('体素(%d,%d) 优化失败: %s\n',x,y,ME.message);
                     RESNORM(x,y) = NaN;
+                    continue;
                 end
-            else
-                % 无效信号体素
-                S0(x,y) = NaN;
-                d(x,y) = NaN;
-                f(x,y) = NaN;
-                RESNORM(x,y) = NaN;
-                theta(x,y) = NaN;
-                phi(x,y) = NaN;
             end
         end
     end
