@@ -37,9 +37,9 @@ RESNORM_values = zeros(1, num_trials);
 all_params = zeros(num_trials, 5);
 
 % 定义扰动尺度（基于初始参数的比例）
-perturb_scales = [0.5 * startx_transformed(1), ...  % S0 扰动
-                   0.5 * startx_transformed(2), ...  % d  扰动
-                   1.0, ...                   % f  扰动 (logistic变换后)
+perturb_scales = [0.2 * startx_transformed(1), ...  % S0 扰动
+                   0.2 * startx_transformed(2), ...  % d  扰动
+                   0.2, ...                   % f  扰动 (logistic变换后)
                    0.1 * pi, ...              % theta 扰动
                    0.2*pi];                % phi   扰动
 
@@ -85,7 +85,11 @@ disp(best_params_original);
 
 % 找到最小RESNORM的试验比例
 tolerance = 1e-4;
-proportion_best = sum(abs(RESNORM_values - min_RESNORM) < tolerance) / num_trials;
+% min_local = min(local_RESNORM);
+% success_rate = sum(abs(local_RESNORM - min_local) <= tolerance) / num_trials;
+% is_minimal = abs(RESNORM_values - min_RESNORM) <= tolerance * max(1, min_RESNORM);
+
+proportion_best = sum(abs(RESNORM_values - min_RESNORM) <= tolerance) / num_trials;
 disp(sum(abs(RESNORM_values - min_RESNORM) < tolerance));
 fprintf('找到接近最小 RESNORM 值的试验比例: %.2f\n', proportion_best);
 
@@ -101,8 +105,7 @@ else
 end
 
 %% 多体素验证（新增）
-test_voxels = [92,65,72;   % 原始体素
-               93,65,72;   % 相邻体素
+test_voxels = [93,65,72;   % 相邻体素
                80,50,72;   % 不同位置
                100,80,72]; % 边缘体素
 
@@ -122,7 +125,7 @@ for v = 1:size(test_voxels,1)
     end
     
     min_local = min(local_RESNORM);
-    success_rate = sum(abs(local_RESNORM - min_local) <= tolerance*max(1,min_local)) / num_trials;
+    success_rate = sum(abs(local_RESNORM - min_local) <= tolerance) / num_trials;
     
     fprintf('\n体素 [%d,%d,%d]:\n', current_voxel);
     fprintf('最小RESNORM: %.3e 成功比例: %.2f\n', min_local, success_rate);
