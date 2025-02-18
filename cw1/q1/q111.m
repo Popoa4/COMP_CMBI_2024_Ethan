@@ -9,13 +9,14 @@ qhat = bvecs'; % 转置为108x3
 bvals = 1000 * sum(qhat .* qhat, 2); % 计算b值
 
 %% 构建设计矩阵Y
+Y = build_design_matrix(bvals, qhat);
 Y = zeros(108, 7);
-for i = 1:108
-    b = bvals(i);
-    q = qhat(i, :);
-    % q(1)->q_x; q(2)->q_y; q(3)->q_z; 
-    Y(i,:) = [1, -b*q(1)^2, -2*b*q(1)*q(2), -2*b*q(1)*q(3), -b*q(2)^2, -2*b*q(2)*q(3), -b*q(3)^2];
-end
+% for i = 1:108
+%     b = bvals(i);
+%     q = qhat(i, :);
+%     % q(1)->q_x; q(2)->q_y; q(3)->q_z; 
+%     Y(i,:) = [1, -b*q(1)^2, -2*b*q(1)*q(2), -2*b*q(1)*q(3), -b*q(2)^2, -2*b*q(2)*q(3), -b*q(3)^2];
+% end
 
 %% 单个体素测试
 voxel = dwis(:, 92, 65, 72);

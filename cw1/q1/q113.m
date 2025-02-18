@@ -18,6 +18,10 @@ Avox = dwis(:,92,65,72);  % 108个测量值
 startx_original = [3.5e3, 3e-3, 0.25, 0, 0];
 
 % 将初始参数变换到新的参数空间
+% startx_transformed(1) = sqrt(startx_original(1));
+% startx_transformed(2) = sqrt(startx_original(2));
+% startx_transformed(3) = -log((1/startx_original(3)) - 1);
+
 startx_transformed(1) = sqrt(startx_original(1));
 startx_transformed(2) = sqrt(startx_original(2));
 startx_transformed(3) = -log((1/startx_original(3)) - 1);
