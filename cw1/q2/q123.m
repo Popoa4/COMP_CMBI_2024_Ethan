@@ -21,9 +21,6 @@ Avox_original = squeeze(dwis(:, voxel_coords(1), voxel_coords(2), voxel_coords(3
 % 构建设计矩阵 Y
 Y = build_design_matrix(bvals, qhat);
 
-% DTI初始化获取初始参数
-[S0_init, d_init, f_init, theta_init, phi_init] = dti_initialization_single_voxel(Y, Avox_original);
-
 % 运行不同的不确定性估计方法
 % 1. 经典自助法
 [ci_bootstrap, time_bootstrap] = bootstrap_uncertainty(dwis, bvals, qhat, slice_num, voxel_coords, Y, 1000);
@@ -36,6 +33,7 @@ Y = build_design_matrix(bvals, qhat);
 
 % 4. MCMC方法（假设之前已经在Q1.2.2中实现）
 [ci_mcmc, time_mcmc] = mcmc_uncertainty(dwis, bvals, qhat, slice_num, voxel_coords, Y);
+% save('bootstrap_ci.mat', 'S0_ci_low', 'S0_ci_high', 'd_ci_low', 'd_ci_high', 'f_ci_low', 'f_ci_high');
 
 % 结果比较
 fprintf('\n===== 不同方法的参数置信区间 =====\n');
