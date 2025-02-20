@@ -90,6 +90,20 @@ options = optimoptions('fmincon',...
 % 参数边界约束 [S0, d, f, theta, phi]
 lb = [0,   0,   0,   0,    0];   % 下限
 ub = [Inf, Inf, 1,   pi, 2*pi];  % 上限
+
+%% 可视化残差空间分布
+% 计算残差
+% S_pred = BallStickSSD_Enhanced(startx_transformed, meas, bvals, qhat);
+% residuals = meas - S_pred;
+% 
+% % 按梯度方向分组显示残差
+% [~,~,bin] = histcounts(atan2(qhat(:,2), qhat(:,1)), linspace(-pi,pi,9));
+% % disp(bin);
+% figure;
+% boxplot(residuals, bin);
+% xlabel('梯度方向组'); ylabel('残差');
+% title('不同梯度方向的残差分布');
+% return;
 %% 多次拟合尝试，收集 RESNORM
 num_trials = 100; % 为提高全局最小的识别率可适当增加尝试次数
 RESNORM_values = zeros(num_trials,1);
@@ -108,6 +122,7 @@ for i = 1:num_trials
         % current_startx, h);
         [params_hat_trans, RESNORM] = fmincon(@(x)BallStickSSD_Enhanced(x,meas,bvals,qhat),...
                           startx_transformed, [], [], [], [], lb, ub, @nonlcon, options);
+        
     catch ME
         fprintf('Trial %d error: %s\n', i, ME.message);
         RESNORM = Inf;
