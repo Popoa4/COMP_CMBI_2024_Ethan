@@ -13,4 +13,11 @@ function S = BallStick_model(x, bvals, qhat)
     
     % 计算模型信号
     S = S0 * (f * exp(-bvals*d .* (fibdotgrad.^2)) + (1-f) * exp(-bvals*d));
+    if any(isnan(S), 'all')
+        disp('BallStick_model output has NaN!');
+    end
+    if any(isinf(S), 'all')
+        disp('BallStick_model output has Inf!');
+    end
+    % disp(size(S));
 end

@@ -6,8 +6,14 @@ function [params_opt, resnorm] = fit_zeppelin_stick(meas, bvals, grad_dirs)
     % [temp_params, ~] = fit_ball_stick(meas, bvals, grad_dirs);
     % disp(temp_params);
     [S0_init, d_init, theta_init, phi_init] = dti_initialization(meas, bvals, grad_dirs);
-    lambda2_init = trace(d_init)/3 * 0.5;
-
+    % S0_init = temp_params(1);
+    % d_init = temp_params(2);
+    % f_init = temp_params(3);
+    % theta_init = temp_params(4);
+    % phi_init = temp_params(5);
+    lambda2_init = d_init * 0.5;
+    
+    % x0 = [S0_init, d_init, f_init, theta_init, phi_init, lambda2_init];
     x0 = [S0_init, trace(d_init)/3, 0.5, theta_init, phi_init, lambda2_init];
     
     % 边界约束

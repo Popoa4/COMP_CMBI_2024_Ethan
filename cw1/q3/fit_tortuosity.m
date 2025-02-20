@@ -6,9 +6,12 @@ function [params_opt, resnorm] = fit_tortuosity(meas, bvals, grad_dirs)
     
     % 基于DTI的初始化
     % 初始化策略
-    [temp_params, ~] = fit_ball_stick(meas, bvals, grad_dirs);
-    x0 = temp_params; 
+    % [temp_params, ~] = fit_ball_stick(meas, bvals, grad_dirs);
+    % x0 = temp_params; 
+    [S0_init, d_init, theta_init, phi_init] = dti_initialization(meas, bvals, grad_dirs);
 
+    x0 = [S0_init, trace(d_init)/3, 0.5, theta_init, phi_init];
+    
     % 优化配置
     options = optimoptions('fmincon','Algorithm','sqp','Display','off');
     

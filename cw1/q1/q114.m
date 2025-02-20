@@ -32,16 +32,16 @@ h = optimset('MaxFunEvals', 20000, ...
              'Display', 'off'); % 关闭显示
 
 %% 多次拟合
-num_trials = 100; % 试验次数
+num_trials = 150; % 试验次数
 RESNORM_values = zeros(1, num_trials);
 all_params = zeros(num_trials, 5);
 
 % 定义扰动尺度（基于初始参数的比例）
 perturb_scales = [0.2 * startx_transformed(1), ...  % S0 扰动
                    0.2 * startx_transformed(2), ...  % d  扰动
-                   0.2, ...                   % f  扰动 (logistic变换后)
-                   0.1 * pi, ...              % theta 扰动
-                   0.2*pi];                % phi   扰动
+                   0.1* startx_transformed(3), ...                   % f  扰动 (logistic变换后)
+                   0.1 * startx_transformed(4), ...              % theta 扰动
+                   0.2* startx_transformed(5)];                % phi   扰动
 
 
 for i = 1:num_trials
@@ -106,7 +106,7 @@ end
 
 %% 多体素验证（新增）
 test_voxels = [93,65,72;   % 相邻体素
-               80,50,72;   % 不同位置
+               80,50,70;   % 不同位置
                100,80,72]; % 边缘体素
 
 for v = 1:size(test_voxels,1)

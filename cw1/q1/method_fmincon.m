@@ -3,7 +3,7 @@ function [results, total_time] = method_fmincon(dwis, bvals, qhat, slice_num)
     tic;
     [x_dim, y_dim] = size(dwis, 2:3);
     % 步骤1: 计算DTI参数
-    % [S0_init, d_init, f_init, theta_init, phi_init] = dti_initialization(dwis, bvals, qhat, slice_num);
+    [S0_init, d_init, f_init, theta_init, phi_init] = dti_initialization(dwis, bvals, qhat, slice_num);
     
      h = optimoptions('fmincon', ...
                      'Algorithm', 'sqp', ...  % 更稳健的算法
@@ -33,9 +33,9 @@ function [results, total_time] = method_fmincon(dwis, bvals, qhat, slice_num)
             Avox = squeeze(dwis(:,x,y,slice_num));
             if all(Avox>0)
                 % startx = [mean(Avox(bvals==0)), 2e-3, 0.3, pi/4, pi/4]; % 通用初始值
-                startx = [3.5e3, 3e-3, 0.25, 0, 0];
-                % startx = [S0_init(x,y), d_init(x,y),...
-                         % f_init(x,y), theta_init(x,y), phi_init(x,y)];
+                % startx = [3.5e3, 3e-3, 0.25, 0, 0];
+                startx = [S0_init(x,y), d_init(x,y),...
+                         f_init(x,y), theta_init(x,y), phi_init(x,y)];
                 try
                     % 设置超时限制（100秒/体素）
                     % opt = h; 

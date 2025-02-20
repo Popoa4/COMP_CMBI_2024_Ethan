@@ -31,7 +31,7 @@ Y = build_design_matrix(bvals, qhat);
 % 3. 拉普拉斯方法
 [ci_laplace, time_laplace] = laplace_uncertainty(dwis, bvals, qhat, slice_num, voxel_coords, Y);
 
-% 4. MCMC方法（假设之前已经在Q1.2.2中实现）
+% 4. MCMC方法
 [ci_mcmc, time_mcmc] = mcmc_uncertainty(dwis, bvals, qhat, slice_num, voxel_coords, Y);
 % save('bootstrap_ci.mat', 'S0_ci_low', 'S0_ci_high', 'd_ci_low', 'd_ci_high', 'f_ci_low', 'f_ci_high');
 
@@ -40,7 +40,7 @@ fprintf('\n===== 不同方法的参数置信区间 =====\n');
 fprintf('方法\t\tS0置信区间\n');
 fprintf('Bootstrap\t[%.2f, %.2f]\n', ci_bootstrap(1,1), ci_bootstrap(2,1));
 fprintf('Param Bootstrap\t[%.2f, %.2f]\n', ci_param_bootstrap(1,1), ci_param_bootstrap(2,1));
-fprintf('Laplace\t\t[%.2f, %.2f]\n', ci_laplace(1,1), ci_laplace(2,1));
+fprintf('Laplace\t\t[%.2f, %.2f]\n', ci_laplace(1,1), ci_laplace(1,2));
 fprintf('MCMC\t\t[%.2f, %.2f]\n', ci_mcmc(1,1), ci_mcmc(2,1));
 
 % 显示各方法的计算时间

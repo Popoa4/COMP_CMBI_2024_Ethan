@@ -1,3 +1,4 @@
+clear; clc; close all;
 %% 1. 加载数据和协议
 % 加载扩散信号数据（注意文件名，与下载的文件一致）
 fid = fopen('isbi2015_data_normalised.txt', 'r', 'b');
@@ -64,7 +65,7 @@ theta_init = acos(main_dir(3));
 phi_init = atan2(main_dir(2), main_dir(1));
 
 % 初始参数设置
-startx_transformed = [S0_init, trace(D)/3, 0.5, theta_init, phi_init]; % d=MD, f=0.5
+startx_original = [S0_init, trace(D)/3, 0.5, theta_init, phi_init]; % d=MD, f=0.5
 % startx_transformed = [sqrt(startx_original(1)), sqrt(startx_original(2)), ...
 %                       log(startx_original(3)/(1-startx_original(3))), ...
 %                       theta_init, phi_init];
@@ -76,8 +77,6 @@ startx_transformed = [S0_init, trace(D)/3, 0.5, theta_init, phi_init]; % d=MD, f
 % theta_guess = pi/4;
 % phi_guess = pi/4;
 % startx_original = [S0_guess, d_guess, f_guess, theta_guess, phi_guess];
-% % 对于参数变换，我们先将原始参数转换到优化空间：
-% startx_transformed = [sqrt(startx_original(1)), sqrt(startx_original(2)), -log((1/startx_original(3))-1), theta_guess, phi_guess];
 
 %% 定义优化选项（注意新数据的噪声水平与测量数目）
 options = optimoptions('fmincon',...
@@ -85,7 +84,7 @@ options = optimoptions('fmincon',...
     'MaxFunctionEvaluations', 1e4,...
     'StepTolerance', 1e-8,...
     'OptimalityTolerance', 1e-6,...
-    'Display', 'iter-detailed');
+    'Display', 'iter');
 %% 约束条件设置
 % 参数边界约束 [S0, d, f, theta, phi]
 lb = [0,   0,   0,   0,    0];   % 下限
@@ -109,19 +108,19 @@ num_trials = 100; % 为提高全局最小的识别率可适当增加尝试次数
 RESNORM_values = zeros(num_trials,1);
 params_all = zeros(num_trials,5);
 % perturb_scales = [5*startx_transformed(1), 5*startx_transformed(2), 5*startx_transformed(3), 5*startx_transformed(4), 5*startx_transformed(5)]; % 根据新数据调整扰动幅度
-perturb_scales = [5 * startx_transformed(1), ...  % S0 扰动
-                   5 * startx_transformed(2), ...  % d  扰动
-                   5, ...                   % f  扰动 (logistic变换后)
-                   5 * pi, ...              % theta 扰动
-                   5*pi];                % phi   扰动
+perturb_scales = [0.5 * startx_original(1), ...  % S0 扰动
+                   0.5 * startx_original(2), ...  % d  扰动
+                   0.5* startx_original(3), ...                   % f  扰动 (logistic变换后)
+                   0.5 * startx_original(4), ...              % theta 扰动
+                   0.5* startx_original(5)];                % phi   扰动
 for i = 1:num_trials
     perturbation = randn(1,5).*perturb_scales;
-    current_startx = startx_transformed + perturbation;
+    current_startx = startx_original + perturbation;
     try
         % [params_hat_trans, RESNORM, ~, ~] = fminunc(@(x) BallStickSSD_transformed(x, meas, bvals, qhat), ...
         % current_startx, h);
         [params_hat_trans, RESNORM] = fmincon(@(x)BallStickSSD_Enhanced(x,meas,bvals,qhat),...
-                          startx_transformed, [], [], [], [], lb, ub, @nonlcon, options);
+                          current_startx, [], [], [], [], lb, ub, @nonlcon, options);
         
     catch ME
         fprintf('Trial %d error: %s\n', i, ME.message);

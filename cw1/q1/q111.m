@@ -10,7 +10,7 @@ bvals = 1000 * sum(qhat .* qhat, 2); % 计算b值
 
 %% 构建设计矩阵Y
 Y = build_design_matrix(bvals, qhat);
-Y = zeros(108, 7);
+% Y = zeros(108, 7);
 % for i = 1:108
 %     b = bvals(i);
 %     q = qhat(i, :);
@@ -36,6 +36,10 @@ MD = (x(2) + x(5) + x(7)) / 3;
 lambda = diag(L);
 lambda_mean = mean(lambda);
 FA = sqrt( (3/2) * sum((lambda - lambda_mean).^2) / sum(lambda.^2) );
+disp("MD:");
+disp(MD);
+disp("FA");
+disp(FA);
 
 %% 全切片处理（切片72）
 slice_num = 72;
