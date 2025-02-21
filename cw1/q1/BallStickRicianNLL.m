@@ -5,7 +5,7 @@ function nll = BallStickRicianNLL(x, Avox, bvals, qhat, snr_threshold)
     f = 1 / (1 + exp(-x(3)));
     theta = x(4);
     phi = x(5);
-    sigma = x(6); % 获取sigma
+    sigma = x(6);
 
 
     % 计算纤维方向

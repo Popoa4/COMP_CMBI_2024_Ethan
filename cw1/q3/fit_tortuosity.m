@@ -1,21 +1,13 @@
-%% Tortuosity 模型实现
 function [params_opt, resnorm] = fit_tortuosity(meas, bvals, grad_dirs)
-    % 参数顺序: [S0, d, f, theta, phi]
+    % Parameter order: [S0, d, f, theta, phi]
     lb = [0,   0,   0,   0,    0];
     ub = [Inf, Inf, 1,   pi, 2*pi];
     
-    % 基于DTI的初始化
-    % 初始化策略
-    % [temp_params, ~] = fit_ball_stick(meas, bvals, grad_dirs);
-    % x0 = temp_params; 
+    % DTI-based initialization
     [S0_init, d_init, theta_init, phi_init] = dti_initialization(meas, bvals, grad_dirs);
-
-    x0 = [S0_init, trace(d_init)/3, 0.5, theta_init, phi_init];
-    
-    % 优化配置
+    x0 = [S0_init, trace(d_init)/3, 0.5, theta_init, phi_init];  
     options = optimoptions('fmincon','Algorithm','sqp','Display','off');
-    
-    % 多起点优化
+
     num_trials = 100;
     min_resnorm = Inf;
     for i = 1:num_trials
@@ -31,19 +23,16 @@ function [params_opt, resnorm] = fit_tortuosity(meas, bvals, grad_dirs)
     end
     resnorm = min_resnorm;
     
-    % 目标函数
     function sumRes = tortuosity_obj(x, meas, bvals, grad_dirs)
         S0 = x(1);
         lambda1 = x(2);
         f = x(3);
         theta = x(4);
         phi = x(5);
-        lambda2 = (1-f)*lambda1; % Tortuosity约束
+        lambda2 = (1-f)*lambda1;
         
-        % 纤维方向
         n = [sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)];
-        
-        % 计算信号
+
         dot_prod = grad_dirs * n';
         S_stick = exp(-bvals*lambda1.*dot_prod.^2);
         S_zeppelin = exp(-bvals.*(lambda2 + (lambda1-lambda2).*dot_prod.^2));

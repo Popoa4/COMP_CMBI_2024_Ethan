@@ -27,5 +27,5 @@ function [S0_map, d_map, f_map, theta_map, phi_map] = dti_initialization(dwis, b
         end
     end
     d_map = MD_map;
-    f_map = FA_map; % 可根据需要调整映射关系
+    f_map = FA_map;
 end

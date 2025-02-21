@@ -1,21 +1,17 @@
 function [sumRes, grad] = BallStickSSD_grad(x, Avox, bvals, qhat)
-    % 参数提取
     S0 = x(1);
     d = x(2);
     f = x(3);
     theta = x(4);
     phi = x(5);
     
-    % 纤维方向计算
     fibdir = [cos(phi)*sin(theta), sin(phi)*sin(theta), cos(theta)];
-    fibdotgrad = sum(qhat .* fibdir, 2); % 点积
+    fibdotgrad = sum(qhat .* fibdir, 2); 
     
-    % 信号模型计算
     E_stick = exp(-bvals*d.*fibdotgrad.^2);
     E_ball = exp(-bvals*d);
     S = S0*(f*E_stick + (1-f)*E_ball);
     
-    % 残差计算
     residuals = Avox - S;
     sumRes = sum(residuals.^2);
     
@@ -28,10 +24,6 @@ function [sumRes, grad] = BallStickSSD_grad(x, Avox, bvals, qhat)
     grad_S0 = sum(common_term .* dS_dS0);
     
     % 2. d的梯度
-    % dE_dd_stick = -bvals .* fibdotgrad.^2 .* E_stick;
-    % dE_dd_ball = -bvals .* E_ball;
-    % dS_dd = S0 * (f*dE_dd_stick + (1-f)*dE_dd_ball);
-    % grad_d = sum(common_term .* dS_dd);
     dE_dd_stick = -bvals .* fibdotgrad.^2 .* E_stick;
     dE_dd_ball = -bvals .* E_ball;
     dS_dd_part1 = S0 * f * dE_dd_stick;
