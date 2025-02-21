@@ -10,9 +10,9 @@ bvals = 1000 * sum(qhat .* qhat, 2);
 slice_num = 72;
     
 %% 选择单个体素 (92, 65, 72)
-% voxel_coords = [92, 65, 72];
+voxel_coords = [92, 65, 72];
 % voxel_coords = [90, 60, 70];
-voxel_coords = [92, 63, 70];
+% voxel_coords = [92, 63, 70];
 % Avox_original = squeeze(dwis(:, voxel_coords(1), voxel_coords(2), voxel_coords(3)));
     
 %% 构建设计矩阵 Y (复用Q1.1.1)

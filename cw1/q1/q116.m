@@ -30,7 +30,6 @@ fprintf('方法0 (随机初始点) 耗时: %.2f 秒\n', time_origin);
 [results_dti, time_dti] = method_dti_initial(dwis, bvals, qhat, slice_num);
 % 可视化结果m
 visualize_results(results_dti, 'DTI Initialization Method');
-fprintf('\n===== 方法比较 =====\n');
 fprintf('方法1 (DTI初始点) 耗时: %.2f 秒\n', time_dti);
 
 %% 实验2
