@@ -1,0 +1,36 @@
+%% (a) simulate sampled data from two groups
+% set the seed of the sample group
+% set the seed as my student id number
+student_id = 123;
+rng(student_id);
+
+% set the size, means, variance
+n = 20;
+
+group1_mean = 1.5;
+group1_std = 0.2;
+
+group2_mean = 2.0;
+group2_std = 0.2;
+
+% sample the group data
+group1_data = group1_mean + group1_std * randn(n,1);
+group2_data = group2_mean + group2_std * randn(n,1);
+
+% compute and print the mean and standard deviation of each sample
+sample1_mean = mean(group1_data);
+sample1_sd = std(group1_data);
+sample2_mean = mean(group2_data);
+sample2_sd = std(group2_data);
+disp(['Group 1 sample mean: ', num2str(sample1_mean)]);
+disp(['Group 1 sample standard deviation: ', num2str(sample1_sd)]);
+disp(['Group 2 sample mean: ', num2str(sample2_mean)]);
+disp(['Group 2 sample standard deviation: ', num2str(sample2_sd)]);
+
+fprintf('Group1: mean = %.4f (expected: %.1f), std = %.4f (期望值: ~%.1f)\n', ...
+        mean_group1, mu1, std_group1, sigma);
+fprintf('第二组: 均值 = %.4f (期望值: %.1f), 标准差 = %.4f (期望值: ~%.1f)\n', ...
+        mean_group2, mu2, std_group2, sigma);
+
+%% (b) compute the t-statistic of the two samples
+[h, p, ci, stats] = ttest2(group1_data, group2_data);
