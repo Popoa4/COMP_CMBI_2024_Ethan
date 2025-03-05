@@ -22,15 +22,152 @@ sample1_mean = mean(group1_data);
 sample1_sd = std(group1_data);
 sample2_mean = mean(group2_data);
 sample2_sd = std(group2_data);
-disp(['Group 1 sample mean: ', num2str(sample1_mean)]);
-disp(['Group 1 sample standard deviation: ', num2str(sample1_sd)]);
-disp(['Group 2 sample mean: ', num2str(sample2_mean)]);
-disp(['Group 2 sample standard deviation: ', num2str(sample2_sd)]);
 
-fprintf('Group1: mean = %.4f (expected: %.1f), std = %.4f (期望值: ~%.1f)\n', ...
-        mean_group1, mu1, std_group1, sigma);
-fprintf('第二组: 均值 = %.4f (期望值: %.1f), 标准差 = %.4f (期望值: ~%.1f)\n', ...
-        mean_group2, mu2, std_group2, sigma);
+fprintf('Group1: mean = %.4f (expected: %.1f), std = %.4f (expected: %.1f)\n', ...
+        sample1_mean, group1_mean, sample1_sd, group1_std);
+fprintf('Group2: mean = %.4f (expected: %.1f), std = %.4f (expected: %.1f)\n', ...
+        sample2_mean, group2_mean, sample2_sd, group2_std);
 
 %% (b) compute the t-statistic of the two samples
 [h, p, ci, stats] = ttest2(group1_data, group2_data);
+% h: Hypothesis test result (1 = reject the null hypothesis, 0 = do not reject the null hypothesis)
+% p: p value, reject the null hypothesis when it is less than the significance level (usually 0.05)
+% ci: 95% confidence interval of the mean difference
+% stats: Structure containing t statistic (tstat) and degrees of freedom (df)
+disp(['h value (reject the null hypothesis or not): ', num2str(h)]); % h=1 拒绝，h=0 不拒绝
+disp(['p-value: ', num2str(p)]);
+disp(['Confidence interval: ', num2str(ci')]);
+disp(['t-statistic: ', num2str(stats.tstat)]);
+disp(['Degrees of freedom: ', num2str(stats.df)]);
+disp(['Combined standard deviation: ', num2str(stats.sd)]);
+
+%% (c) compute the t-statistic with GLM model
+% -----------------------------------------------------------------------------
+% i. derive the matrix X and its column space C(X)
+X1 = [ones(n,1); zeros(n,1)];
+X2 = [zeros(n,1); ones(n,1)];
+X = [X1 X2];
+% verify its space C(X)
+dim_X = rank(X);
+disp(['dim(X) = ', num2str(dim_X)]); 
+
+% -----------------------------------------------------------------------------
+% ii. derive the formula of the projection Px of C(x) and verify its properties
+XtX = X' * X;
+XtX_inv = inv(XtX);
+disp('X''X:');
+disp(XtX);
+disp('(X''X)^(-1):');
+disp(XtX_inv);
+
+PX = X * XtX_inv * X';
+% 对称性: PX' = PX
+disp('Verify the symmetry of PX:');
+disp(['|PX - PX''|=', num2str(norm(PX - PX'))]);
+% 幂等性: PX × PX = PX
+disp('Verify the idempotence of PX:');
+disp(['|PX - PX*PX|=', num2str(norm(PX - PX*PX))]);
+% 计算PX的迹
+trace_PX = trace(PX);
+disp(['trace of PX: ', num2str(trace_PX)]);
+% PX的迹等于C(X)的维度，即dim(X)。在我们的例子中，trace(PX) = 2。这表示投影到C(X)后，保留了原始数据的2个自由度，对应于两个组的均值。
+
+% -----------------------------------------------------------------------------
+% iii. use PX to determine the projection of Y into C(X)
+Y = [group1_data; group2_data];
+% compute the projection
+Y_hat = PX * Y;
+% disp(['组1预测值: ', num2str(mean(Y_hat(1:20)))]);
+% disp(['组2预测值: ', num2str(mean(Y_hat(21:40)))]);
+% Ŷ是X列空间C(X)中与Y最接近的向量
+% 在这个例子中，Ŷ前20个元素都等于第一组的样本均值，后20个元素都等于第二组的样本均值
+
+% -----------------------------------------------------------------------------
+% iv. compute Rx
+I = eye(size(PX));
+RX = I - PX;
+% 对称性: RX' = RX
+disp('Verify the symmetry of RX:');
+disp(['|RX - RX''|=', num2str(norm(RX - RX'))]);
+% 幂等性: RX × RX = RX
+disp('Verify the idempotence of RX:');
+disp(['|RX - RX*RX|=', num2str(norm(RX - RX*RX))]);
+
+% -----------------------------------------------------------------------------
+% v. use Rx to determine e_hat and the dimension of C(X)⊥
+e_hat = RX * Y;
+dim_CX_perp = size(X,1) - rank(X);
+disp(['dimention of C(X): ', num2str(dim_CX_perp)]);
+
+% -----------------------------------------------------------------------------
+% vi. determine the angle between e_hat and Y_hat
+angle_rad = acos(dot(e_hat, Y_hat) / (norm(e_hat) * norm(Y_hat)));
+angle_deg = rad2deg(angle_rad);
+disp(['the angle between e_hat and Y_hat is (degree): ', num2str(angle_deg)]);
+% 因为 Y_hat 是 Y 在模型空间 C(X) 上的投影，而 e_hat 是 Y 在误差空间 C(X)⊥ 上的投影，这两个空间是正交的。夹角为 90 度。
+
+% -----------------------------------------------------------------------------
+% vii. use the formula to determine beta_hat
+% β̂ = (X'X)⁻¹X'Y
+beta_hat = XtX_inv * X' * Y;
+% 叫最小二乘法估计的原因：使残差平方和 ||Y - Xβ||² 最小化
+
+% -----------------------------------------------------------------------------
+% viii. estimate the variance of the stochastic component
+sigma_hat_sq = (e_hat' * e_hat) / (length(Y) - dim_X);
+disp(['the estimated value of σ^2: ', num2str(sigma_hat_sq)]);
+% 这就是MSE，因为分子(e_hat' * e_hat)是残差平方和(SSE)，分母(n - dim(X))是残差自由度
+
+% -----------------------------------------------------------------------------
+% ix. estimate the covariance matrix of the parameters and determine the STD of the parameters
+S_beta_hat = sigma_hat_sq * XtX_inv;
+disp('the covariance matrix of the parameters:');
+disp(S_beta_hat);
+std_beta_hat = sqrt(diag(S_beta_hat));
+disp('STD of the parameters:');
+disp(std_beta_hat);
+
+% -----------------------------------------------------------------------------
+% x. derive the contrast vector and reduced model
+% H0: No difference between the means of the two groups
+lambda = [1; -1];
+mean_diff = lambda' * beta_hat;
+disp(['difference between the estimated means(beta1-beta₂): ', num2str(mean_diff)]);
+% 简化模型在群体均值相等的约束下，只需要一个表示共同均值的参数。因此，X₀是一个全1列向量
+X0 = ones(length(Y), 1);
+
+% -----------------------------------------------------------------------------
+% xi. use X0to compute the additional error and F-statistic
+PX0 = X0 * inv(X0'*X0) * X0'; 
+Y_hat0 = PX0 * Y;
+e_hat0 = Y - Y_hat0;
+% compute the additional error
+SSE_full = e_hat' * e_hat;
+SSE_reduced = e_hat0' * e_hat0;
+SSE_diff = SSE_reduced - SSE_full;
+disp(['Additional error caused by constraints(SSE_diff): ', num2str(SSE_diff)]);
+
+% Compute F-statistic and its DOF
+% 分子自由度 = 全模型维度 - 简化模型维度
+% 分母自由度 = 观测总数 - 全模型维度
+df1 = rank(X) - rank(X0);
+df2 = length(Y) - rank(X);
+F_stat = (SSE_diff / df1) / (SSE_full / df2);
+disp(['F-statistic: ', num2str(F_stat)]);
+disp(['Degree of Fredom of F-statistic: ', num2str(df1), ', ', num2str(df2)]);
+
+% -----------------------------------------------------------------------------
+% xii. use t-statistic to determine which group has a higher mean
+t_stat = (lambda' * beta_hat) / sqrt(lambda' * S_beta_hat * lambda);
+disp(['t-statistic: ', num2str(t_stat)]);
+
+
+% -----------------------------------------------------------------------------
+% xiii. explain the meaning of the parameters
+% compare with the value of ground truth
+% beta1: represents the population mean of the first group
+% beta2: represents the population mean of the second
+true_beta = [group1_mean; group2_mean];
+disp('参数估计与真实值比较:');
+disp([beta_hat, true_beta, beta_hat - true_beta]);
+disp('列分别为: 估计值, 真实值, 偏差');
