@@ -34,12 +34,12 @@ fprintf('Group2: mean = %.4f (expected: %.1f), std = %.4f (expected: %.1f)\n', .
 % p: p value, reject the null hypothesis when it is less than the significance level (usually 0.05)
 % ci: 95% confidence interval of the mean difference
 % stats: Structure containing t statistic (tstat) and degrees of freedom (df)
-disp(['h value (reject the null hypothesis or not): ', num2str(h)]); % h=1 拒绝，h=0 不拒绝
-disp(['p-value: ', num2str(p)]);
-disp(['Confidence interval: ', num2str(ci')]);
+% disp(['h value (reject the null hypothesis or not): ', num2str(h)]); % h=1 拒绝，h=0 不拒绝
+% disp(['p-value: ', num2str(p)]);
+% disp(['Confidence interval: ', num2str(ci')]);
 disp(['t-statistic: ', num2str(stats.tstat)]);
 disp(['Degrees of freedom: ', num2str(stats.df)]);
-disp(['Combined standard deviation: ', num2str(stats.sd)]);
+% disp(['Combined standard deviation: ', num2str(stats.sd)]);
 
 %% (c) compute the t-statistic with GLM model
 % -----------------------------------------------------------------------------
@@ -168,6 +168,57 @@ disp(['t-statistic: ', num2str(t_stat)]);
 % beta1: represents the population mean of the first group
 % beta2: represents the population mean of the second
 true_beta = [group1_mean; group2_mean];
-disp('参数估计与真实值比较:');
+disp('estimated values, ground truth values, differences');
 disp([beta_hat, true_beta, beta_hat - true_beta]);
-disp('列分别为: 估计值, 真实值, 偏差');
+
+% -----------------------------------------------------------------------------
+% xiv. compute the projection of e
+e_true_group1 = group1_data - group1_mean;
+e_true_group2 = group2_data - group2_mean;
+e_true = [e_true_group1; e_true_group2];
+e_proj_CX = PX * e_true;
+% 样本参数的偏差由投影到C(X)的误差分量决定
+beta_bias = XtX_inv * X' * e_true;
+disp('estimated beta difference:');
+disp(beta_bias);
+disp('real difference of beta:');
+disp(beta_hat - true_beta);
+
+% -----------------------------------------------------------------------------
+% xv. compute the projection of e into C(X)⊥
+e_proj_CX_perp = RX * e_true;
+% 理论上，e_proj_CX_perp 应该等于 ê
+% 因为RX * Y = RX * (Xβ + e) = RX * e，由于RX * X = 0
+disp(['|e_proj_CX_perp - e_hat|: ', num2str(norm(e_proj_CX_perp - e_hat))]);
+
+%% (d) compute the t-statistic with a new model (with X0, beta0)
+X0_intercept = ones(2*n, 1);
+X_d = [X0_intercept, X1, X2];
+disp(['dim(X_d) = ', num2str(rank(X_d))]);
+
+% ii. compute the new PX
+PX_d = X_d * pinv(X_d'*X_d) * X_d'; 
+disp(['|PX_d - PX| = ', num2str(norm(PX_d - PX))]);
+% PX_d 和 PX 相同；估计空间相同：新模型只是对同一空间进行了不同的参数化；虽然X_d有3列，但它的列空间仍然是2维的，和之前的模型一样
+
+% iii. determine the new contrast vector and reduced model
+lambda_d = [0; 1; -1];
+% 简化模型对应于H₀: λ'β = 0的约束，即只有截距项X₀β₀的模型，捕获整体均值。
+new_X0_reduced = X0_intercept;
+
+% iv. compute the t-statistic
+% compute the estimate of the parameter use pinv
+beta_hat_new = pinv(X_d) * Y;
+Y_hat_new = X_d * beta_hat_new;
+e_hat_new = Y - Y_hat_new;
+sigma_hat_sq_new = (e_hat_new' * e_hat_new) / (length(Y) - rank(X_d));
+% Calculate the covariance matrix of parameter estimates
+S_beta_hat_new = sigma_hat_sq_new * pinv(X_d' * X_d);
+% compute the t-statistic
+t_stat_new = (lambda_d' * beta_hat_new) / sqrt(lambda_d' * S_beta_hat_new * lambda_d);
+disp(['new t-statistic: ', num2str(t_stat_new)]);
+
+%% (e) compute the t-statistic with another model(without x2, beta2)
+
+
+

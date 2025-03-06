@@ -34,12 +34,12 @@ fprintf('Group2: mean = %.4f (expected: %.1f), std = %.4f (expected: %.1f)\n', .
 % p: p value, reject the null hypothesis when it is less than the significance level (usually 0.05)
 % ci: 95% confidence interval of the mean difference
 % stats: Structure containing t statistic (tstat) and degrees of freedom (df)
-disp(['h value (reject the null hypothesis or not): ', num2str(h)]); % h=1 拒绝，h=0 不拒绝
-disp(['p-value: ', num2str(p)]);
-disp(['Confidence interval: ', num2str(ci')]);
+% disp(['h value (reject the null hypothesis or not): ', num2str(h)]); % h=1 拒绝，h=0 不拒绝
+% disp(['p-value: ', num2str(p)]);
+% disp(['Confidence interval: ', num2str(ci')]);
 disp(['t-statistic: ', num2str(stats.tstat)]);
 disp(['Degrees of freedom: ', num2str(stats.df)]);
-disp(['Combined standard deviation: ', num2str(stats.sd)]);
+% disp(['Combined standard deviation: ', num2str(stats.sd)]);
 
 %% (c) compute the t-statistic with GLM model
 % -----------------------------------------------------------------------------
@@ -190,3 +190,56 @@ e_proj_CX_perp = RX * e_true;
 % 理论上，e_proj_CX_perp 应该等于 ê
 % 因为RX * Y = RX * (Xβ + e) = RX * e，由于RX * X = 0
 disp(['|e_proj_CX_perp - e_hat|: ', num2str(norm(e_proj_CX_perp - e_hat))]);
+
+%% (d) compute the t-statistic with a new model (with X0, beta0)
+X0_intercept = ones(2*n, 1);
+X_d = [X0_intercept, X1, X2];
+disp(['dim(X_d) = ', num2str(rank(X_d))]);
+
+% ii. compute the new PX
+PX_d = X_d * pinv(X_d'*X_d) * X_d'; 
+disp(['|PX_d - PX| = ', num2str(norm(PX_d - PX))]);
+% PX_d 和 PX 相同；估计空间相同：新模型只是对同一空间进行了不同的参数化；虽然X_d有3列，但它的列空间仍然是2维的，和之前的模型一样
+
+% iii. determine the new contrast vector and reduced model
+lambda_d = [0; 1; -1];
+% 简化模型对应于H₀: λ'β = 0的约束，即只有截距项X₀β₀的模型，捕获整体均值。
+X_d_reduced = X0_intercept;
+
+% iv. compute the t-statistic
+% compute the estimate of the parameter use pinv
+beta_hat_d = pinv(X_d) * Y;
+Y_hat_d = X_d * beta_hat_d;
+e_hat_d = Y - Y_hat_d;
+sigma_hat_sq_d = (e_hat_d' * e_hat_d) / (length(Y) - rank(X_d));
+% Calculate the covariance matrix of parameter estimates
+S_beta_hat_d = sigma_hat_sq_d * pinv(X_d' * X_d);
+% compute the t-statistic
+t_stat_d = (lambda_d' * beta_hat_d) / sqrt(lambda_d' * S_beta_hat_d * lambda_d);
+disp(['new t-statistic with the constant variable: ', num2str(t_stat_d)]);
+% β₀: 表示整体截距或基准水平
+% β₁: 表示第一组的附加效应（相对于基准）
+% β₂: 表示第二组的附加效应（相对于基准）
+% 第一组均值 = β₀ + β₁
+% 第二组均值 = β₀ + β₂
+
+%% (e) compute the t-statistic with another model(without x2, beta2)
+X_e = [X0_intercept, X1];
+disp(['dim(X_e) = ', num2str(rank(X_e))]);
+
+% ii. determine the new contrast vector and reduced model
+lambda_e = [0; 1];
+X_e_reduced = X0_intercept;
+
+% iii. compute the t-statistic
+beta_hat_e = pinv(X_e) * Y;
+Y_hat_e = X_e * beta_hat_e;
+e_hat_e = Y - Y_hat_e;
+sigma_hat_sq_e = (e_hat_e' * e_hat_e) / (length(Y) - rank(X_e));
+% Calculate the covariance matrix of parameter estimates
+S_beta_hat_e = sigma_hat_sq_e * pinv(X_e' * X_e);
+% compute the t-statistic
+t_stat_e = (lambda_e' * beta_hat_e) / sqrt(lambda_e' * S_beta_hat_e * lambda_e);
+disp(['new t-statistic dropping the X2: ', num2str(t_stat_e)]);
+% β₀: 表示第二组的总体均值 (作为基准水平)
+% β₁: 表示第一组相对于第二组的差异
