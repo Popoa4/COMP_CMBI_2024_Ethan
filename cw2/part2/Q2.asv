@@ -67,11 +67,11 @@ max_t_original = max(abs(t_stats_original));
 fprintf('The maximum t statistic under the original label: %.4f\n', max_t_original);
 
 %% (b) use the 1(b) strategy to determine all the permutation of group labels
-% perm_indices = nchoosek(1:n, n1);
-% n_perms = size(perm_indices, 1);
-% disp(n_perms);
-% % store the max t-statistic for every permutation
-% max_t_perms = zeros(n_perms, 1);
+perm_indices = nchoosek(1:n, n1);
+n_perms = size(perm_indices, 1);
+disp(n_perms);
+% store the max t-statistic for every permutation
+max_t_perms = zeros(n_perms, 1);
 
 
 n_random_perms = 1000; % 设定随机排列次数（包括原始排列）
@@ -79,13 +79,15 @@ max_t_perms = zeros(n_random_perms, 1);
 
 % 总是包含原始数据的结果
 max_t_perms(1) = max_t_original;
-parfor p = 2:n_random_perms
-    rand_indices = randperm(n);
-    % 根据随机索引创建新的组标签
-    perm_labels = [zeros(n1, 1); ones(n2, 1)]; % 原始标签
-    perm_labels = perm_labels(rand_indices);   % 打乱标签顺序
+parfor p = 1:n_perms
+    idx1 = perm_indices(p, :);
+    idx2 = setdiff(1:n, idx1);
+    perm_labels = [zeros(n1, 1); ones(n2, 1)];
+    perm_labels([idx1, idx2]) = perm_labels;  % 打乱标签顺序
+    
     % 新的设计矩阵
     X_perm = [ones(n, 1), perm_labels];
+    
     % 重新计算每个体素的 t 统计量
     t_stats_perm = zeros(num_voxels_roi, 1);
     for v = 1:num_voxels_roi
@@ -99,15 +101,16 @@ parfor p = 2:n_random_perms
     % 记录当前排列的最大 t 统计量
     max_t_perms(p) = max(abs(t_stats_perm));
 end
+
 %% (c) computer the p-value corrected
 p_corrected = sum(max_t_perms >= max_t_original) / n_perms;
-fprintf('Corrected p-value: %.4f\n', p_corrected);
+fprintf('校正后的 p 值: %.4f\n', p_corrected);
 
 %% (d) determine the max t-statistic threshold corresponding to p-value of 5%
 % sort the max_t_perms
 sorted_max_t = sort(max_t_perms, 'descend');
 
 % find the threshold of 0.05
-threshold_5pct = sorted_max_t(ceil(0.05 * n_random_perms));
+threshold_5pct = sorted_max_t(ceil(0.95 * n_perms));
 
 fprintf('maximum t statistic threshold corresponding to the 5%% significance level: %.4f\n', threshold_5pct);
