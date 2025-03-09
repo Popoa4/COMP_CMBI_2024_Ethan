@@ -1,7 +1,7 @@
 %% (a) simulate sampled data from two groups
 % set the seed of the sample group
 % set the seed as my student id number
-student_id = 123;
+student_id = 24046635;
 rng(student_id);
 
 % set the size, means, variance
